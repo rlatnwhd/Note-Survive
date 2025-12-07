@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Survive</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- 상단 EXP 바 -->
+        <div class="exp-bar-container">
+            <div class="exp-bar-fill" id="expBar"></div>
+        </div>
+        
+        <!-- 중앙 타이머 -->
+        <div class="timer-display" id="timerDisplay">05 : 00</div>
+        
+        <!-- 우측 원소부여권 -->
+        <div class="element-ticket-display" id="elementTicket">
+            <img src="images/Attribute.png" class="ticket-icon" />
+            <div class="ticket-text">X 2</div>
+        </div>
+        
+        <!-- 하단 HP 바 -->
+        <div class="hp-bar-container">
+            <div class="hp-bar-fill" id="hpBarBottom"></div>
+        </div>
+        
+        <!-- 왼쪽 아래 보유 무기 목록 -->
+        <div class="weapon-list-display" id="weaponListDisplay">
+            <div class="weapon-slot">무기 없음</div>
+        </div>
+        
+        <!-- PAUSE 버튼 -->
+        <button id="pauseBtn" class="pause-btn">
+            <img src="images/pause.svg" alt="PAUSE" width="40" height="40">
+        </button>
+        
+        <!-- 설정 패널 -->
+        <div id="settingsPanel" class="settings-panel hidden">
+            <h2>PAUSE</h2>
+            <button id="mainMenuBtn" class="settings-btn">메인화면으로</button>
+            <button id="restartBtn" class="settings-btn">다시 시작</button>
+            <button id="resumeBtn" class="settings-btn">계속하기</button>
+        </div>
+        
+        <!-- 승리 패널 -->
+        <div id="victoryPanel" class="victory-panel hidden">
+            <div class="victory-content">
+                <h1 style="color: #ffd700; font-size: 4em; margin: 20px 0; text-shadow: 0 0 20px #ffd700;">VICTORY!</h1>
+                <p style="color: #fff; font-size: 2em; margin: 30px 0;">생존하셨습니다!</p>
+                <div style="margin-top: 40px;">
+                    <button id="victoryMainMenuBtn" class="victory-btn">메인화면으로</button>
+                    <button id="victoryRestartBtn" class="victory-btn" style="background: #27ae60;">다시 시작</button>
+                </div>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    
+    <!-- 속성 적용 UI -->
+    <div id="elementPanel" class="panel hidden">
+        <h2>속성 적용</h2>
+        <div id="elementStep1" class="element-step">
+            <h3>무기 선택</h3>
+            <div id="weaponList" class="weapon-list"></div>
+        </div>
+        <div id="elementStep2" class="element-step hidden">
+            <h3>속성 선택</h3>
+            <div class="selected-weapon-info">
+                <p>선택한 무기: <span id="selectedWeaponName"></span></p>
+                <p>현재 속성: <span id="currentElement">없음</span></p>
+            </div>
+            <div id="elementList" class="element-list">
+                <button class="element-btn" data-element="fire">
+                    <img src="images/fire.png" alt="불" class="element-icon">
+                    <span>불</span>
+                </button>
+                <button class="element-btn" data-element="ice">
+                    <img src="images/froz.png" alt="얼음" class="element-icon">
+                    <span>얼음</span>
+                </button>
+                <button class="element-btn" data-element="electric">
+                    <img src="images/elec.png" alt="전기" class="element-icon">
+                    <span>전기</span>
+                </button>
+                <button class="element-btn" data-element="poison">
+                    <img src="images/poiz.png" alt="독" class="element-icon">
+                    <span>독</span>
+                </button>
+            </div>
+            <button id="elementBackBtn" class="back-btn-element">뒤로</button>
+        </div>
+        <button id="elementCloseBtn" class="close-btn">닫기</button>
+    </div>
+    
+    <!-- 레벨업 카드 UI -->
+    <div id="levelUpPanel" class="level-up-panel hidden">
+        <h2>레벨업!</h2>
+        <div class="card-container" id="cardContainer">
+            <!-- 카드들이 여기에 동적으로 생성됨 -->
+        </div>
+    </div>
+    
+    <script src="js/player.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/weapon.js"></script>
+    <script src="js/exp.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/test.js"></script>
+</body>
+</html>
+

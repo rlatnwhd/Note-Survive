@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Survive</title>
+    <style>
+        @font-face {
+            font-family: 'OneStoreMobilePop';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff') format('woff');
+            font-weight: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'OngleIpSeaBreeze';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2510-1@1.0/Ownglyph_the_sea_breeze-Rg.woff2') format('woff2');
+            font-weight: normal;
+            font-display: swap;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #e0e0e0;
+            font-family: 'OneStoreMobilePop', sans-serif;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* 설명 팝업 */
+        #descriptionPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            max-height: 80vh;
+            background: rgba(255, 249, 196, 0.98);
+            border: 5px solid #d32f2f;
+            border-radius: 15px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        #descriptionPopup.show {
+            display: block;
+        }
+
+        .popup-header {
+            background: #d32f2f;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #b71c1c;
+        }
+
+        .popup-header h2 {
+            color: #fff;
+            font-size: 36px;
+            margin: 0;
+        }
+
+        .popup-content {
+            padding: 30px;
+            max-height: 60vh;
+            overflow-y: auto;
+            color: #333;
+        }
+
+        .popup-content::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .popup-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .popup-content::-webkit-scrollbar-thumb {
+            background: #d32f2f;
+            border-radius: 10px;
+        }
+
+        .popup-content::-webkit-scrollbar-thumb:hover {
+            background: #b71c1c;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+        }
+
+        .section h3 {
+            color: #d32f2f;
+            font-size: 24px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #d32f2f;
+            padding-bottom: 8px;
+        }
+
+        .section h4 {
+            color: #ff6b35;
+            font-size: 18px;
+            margin: 12px 0 8px 0;
+        }
+
+        .section p, .section li {
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+
+        .element-grid, .monster-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .element-item, .monster-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+        }
+
+        .element-icon, .monster-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .element-text, .monster-text {
+            flex: 1;
+        }
+
+        .element-name, .monster-name {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 3px;
+        }
+
+        .element-desc, .monster-desc {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .weapon-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .weapon-tag {
+            padding: 6px 12px;
+            background: #ff6b35;
+            color: white;
+            border-radius: 15px;
+            font-size: 13px;
+        }
+
+        .close-popup-btn {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 12px;
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'OneStoreMobilePop', sans-serif;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-popup-btn:hover {
+            background: #b71c1c;
+            transform: scale(1.05);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- 오버레이 -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- 설명 팝업 -->
+    <div id="descriptionPopup">
+        <div class="popup-header">
+            <h2>게임 설명</h2>
+        </div>
+        <div class="popup-content">
+            <!-- 게임 목표 -->
+            <div class="section">
+                <h3>🎯 게임 목표</h3>
+                <p>적을 처치하고 무기를 업그레이드하며 <strong>5분을 살아남으면 승리</strong>합니다.</p>
+                <ul>
+                    <li>시간이 지날수록 피가 지속적으로 감소합니다. (1 ~ 10)</li>
+                    <li>적 처치 시 <strong>HP 10</strong>을 회복합니다.</li>
+                    <li>플레이어 HP: <strong>100</strong></li>
+                    <li>피격 피해: <strong>(기본 10) + (맞은 횟수 × 5)</strong></li>
+                </ul>
+            </div>
+
+            <!-- 적 능력치 -->
+            <div class="section">
+                <h3>👾 적 능력치</h3>
+                <p><strong>체력(HP)</strong> / <strong>방어구(Armor)</strong> / <strong>방어력(Defense)</strong></p>
+                <ul>
+                    <li><strong>체력</strong>: 방어력의 영향을 받음 (피해 감소율 적용)</li>
+                    <li><strong>방어구</strong>: 방어력의 영향을 받지 않음, 체력보다 먼저 소모됨</li>
+                    <li><strong>방어력 0%</strong>: 빨간 체력바</li>
+                    <li><strong>방어력 1% 이상</strong>: 노란 체력바</li>
+                </ul>
+            </div>
+
+            <!-- 몬스터 종류 -->
+            <div class="section">
+                <h3>🔥 몬스터 종류</h3>
+                <div class="monster-grid">
+                    <div class="monster-item">
+                        <img src="images/normal.png" class="monster-icon" alt="일반">
+                        <div class="monster-text">
+                            <div class="monster-name">일반 몬스터</div>
+                            <div class="monster-desc">가장 기본이 되는 몬스터</div>
+                        </div>
+                    </div>
+                    <div class="monster-item">
+                        <img src="images/tank.png" class="monster-icon" alt="탱커">
+                        <div class="monster-text">
+                            <div class="monster-name">탱커 몬스터</div>
+                            <div class="monster-desc">일반 몬스터의 방어구 5배</div>
+                        </div>
+                    </div>
+                    <div class="monster-item">
+                        <img src="images/enchance.png" class="monster-icon" alt="강화">
+                        <div class="monster-text">
+                            <div class="monster-name">강화 몬스터</div>
+                            <div class="monster-desc">높은 피해 감소율 (95%)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 속성 시스템 -->
+            <div class="section">
+                <h3>✨ 속성별 효과</h3>
+                <p>1분마다 <strong>속성부여권 1개</strong> 지급 (총 4개). 무기와 속성부여권 보유 시 <strong>E키</strong>로 속성 부여 가능.</p>
+                <div class="element-item">
+                    <img src="images/Attribute.png" class="element-icon" alt="물리">
+                    <div class="element-text">
+                        <div class="element-name">속성 부여권</div>
+                        <div class="element-desc">무기를 보유중일 때 <strong>E키</strong>를 눌러 사용</div>
+                    </div>
+                </div>
+                
+                <p><em>※ 같은 종류의 속성은 연속으로 부여할 수 없습니다.</em></p>
+                <p><em>※ 2차 속성에 1차 속성을 부여할 수 없습니다.</em></p>
+                
+                <h4>⚙️ 물리 속성</h4>
+                <div class="element-item">
+                    <img src="images/physics.png" class="element-icon" alt="물리">
+                    <div class="element-text">
+                        <div class="element-name">물리 (Physics)</div>
+                        <div class="element-desc">아무런 능력 없음</div>
+                    </div>
+                </div>
+
+                <h4>🔸 1차 속성</h4>
+                <div class="element-grid">
+                    <div class="element-item">
+                        <img src="images/fire.png" class="element-icon" alt="불">
+                        <div class="element-text">
+                            <div class="element-name">불</div>
+                            <div class="element-desc">초당 최대 체력의 5% 피해 (DoT)</div>
+                        </div>
+                    </div>
+                    <div class="element-item">
+                        <img src="images/froz.png" class="element-icon" alt="얼음">
+                        <div class="element-text">
+                            <div class="element-name">얼음</div>
+                            <div class="element-desc">4초 동안 둔화</div>
+                        </div>
+                    </div>
+                    <div class="element-item">
+                        <img src="images/poiz.png" class="element-icon" alt="독">
+                        <div class="element-text">
+                            <div class="element-name">독</div>
+                            <div class="element-desc">초당 50 피해 (방어구 무시, 방어력 적용)</div>
+                        </div>
+                    </div>
+                    <div class="element-item">
+                        <img src="images/elec.png" class="element-icon" alt="전기">
+                        <div class="element-text">
+                            <div class="element-name">전기</div>
+                            <div class="element-desc">0.3초 쇼크</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4>🔹 2차 속성 (조합)</h4>
+                <div class="element-grid">
+                    <div class="element-item">
+                        <img src="images/radioactivity.png" class="element-icon" alt="방사능">
+                        <div class="element-text">
+                            <div class="element-name">방사능 (불 + 전기)</div>
+                            <div class="element-desc">받는 피해량 1.5 ~ 3배 증가</div>
+                        </div>
+                    </div>
+                    <div class="element-item">
+                        <img src="images/magne.png" class="element-icon" alt="자성">
+                        <div class="element-text">
+                            <div class="element-name">자성 (얼음 + 전기)</div>
+                            <div class="element-desc">20% 보호막 파괴</div>
+                        </div>
+                    </div>
+                    <div class="element-item">
+                        <img src="images/corr.png" class="element-icon" alt="부식">
+                        <div class="element-text">
+                            <div class="element-name">부식 (독 + 전기)</div>
+                            <div class="element-desc">방어력 20 ~ 80% 감소</div>
+                        </div>
+                    </div>
+                    <div class="element-item">
+                        <img src="images/gas.png" class="element-icon" alt="가스">
+                        <div class="element-text">
+                            <div class="element-name">가스 (불 + 독)</div>
+                            <div class="element-desc">50% 범위형 DoT (방어구 무시)</div>
+                        </div>
+                    </div>
+                    <div class="element-item">
+                        <img src="images/virus.png" class="element-icon" alt="바이러스">
+                        <div class="element-text">
+                            <div class="element-name">바이러스 (얼음 + 독)</div>
+                            <div class="element-desc">최대 체력의 HP 20% 고정피해 (방어구, 방어력 무시)</div>
+                        </div>
+                    </div>
+                    <div class="element-item">
+                        <img src="images/explo.png" class="element-icon" alt="폭발">
+                        <div class="element-text">
+                            <div class="element-name">폭발 (불 + 얼음)</div>
+                            <div class="element-desc">처치 시 범위 피해</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 무기 종류 -->
+            <div class="section">
+                <h3>⚔️ 무기 종류</h3>
+                <p>무기는 <strong>최대 2개</strong>까지 보유 가능하며, 레벨업을 통해 업그레이드할 수 있습니다.</p>
+                <div class="weapon-list">
+                    <span class="weapon-tag">회전 수리검 (물리)</span>
+                    <span class="weapon-tag">파동 생성기 (물리)</span>
+                    <span class="weapon-tag">안개 생성기 (독)</span>
+                    <span class="weapon-tag">전기 방어막 (전기)</span>
+                    <span class="weapon-tag">화염 방사기 (불)</span>
+                    <span class="weapon-tag">냉기 방사기 (얼음)</span>
+                    <span class="weapon-tag">야구 방망이 (물리)</span>
+                    <span class="weapon-tag">부메랑 (물리)</span>
+                    <span class="weapon-tag">바람 칼날 (물리)</span>
+                    <span class="weapon-tag">로켓 (불)</span>
+                    <span class="weapon-tag">회전 레이저 (전기)</span>
+                    <span class="weapon-tag">샷건 (물리)</span>
+                    <span class="weapon-tag">기관총 (물리)</span>
+                    <span class="weapon-tag">폭죽 (물리)</span>
+                </div>
+            </div>
+        </div>
+        <button class="close-popup-btn" onclick="closeDescriptionPopup()">닫기</button>
+    </div>
+
+    <script src="js/player.js"></script>
+    <script src="js/weapon.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
