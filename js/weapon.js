@@ -215,7 +215,7 @@ const WEAPON_DATA = {
     machinegun: {
         name: '기관총',
         weaponType: 'projectile',
-        damage: 15,
+        damage: 30,
         cooldown: 0.15,
         projectileSpeed: 700,
         projectileSize: 10,
@@ -230,7 +230,7 @@ const WEAPON_DATA = {
     shotgun: {
         name: '샷건',
         weaponType: 'projectile',
-        damage: 25,
+        damage: 30,
         cooldown: 0.7,
         projectileSpeed: 400,
         projectileSize: 10,
@@ -246,8 +246,8 @@ const WEAPON_DATA = {
     laser: {
         name: '회전 레이저',
         weaponType: 'rotating_laser',
-        damage: 10,
-        damageInterval: 0.5, // 0.5초마다 공격
+        damage: 15,
+        damageInterval: 0.05,
         length: 400,
         width: 8,
         rotationSpeed: 1.0,
@@ -369,8 +369,8 @@ const WEAPON_DATA = {
     electricShield: {
         name: '전기 방어막',
         weaponType: 'electric_shield',
-        damage: 10,
-        damageInterval: 0.5, // 0.5초마다 공격
+        damage: 12,
+        damageInterval: 0.4, // 0.5초마다 공격
         radius: 120,
         color: '#ffd93d',
         pulseSpeed: 1.5,

@@ -14,6 +14,16 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// 사운드 매니저 초기화
+try {
+    if (window.soundManager) {
+        soundManager.initBGM();
+        soundManager.initSounds();
+    }
+} catch (error) {
+    console.error('사운드 초기화 오류:', error);
+}
+
 // 게임 상태
 let gameState = {
     running: true,
@@ -67,6 +77,57 @@ let buffTimers = {
     lifesteal: 0,
     enemySlow: 0
 };
+
+// 티켓 지급 알림 표시
+function showTicketNotification() {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-30px);
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(30, 30, 30, 0.95) 100%);
+        color: white;
+        padding: 15px 30px;
+        border-radius: 15px;
+        font-family: 'OneStoreMobilePop', sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 3px rgba(102, 126, 234, 0.6);
+        z-index: 9999;
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 3px solid rgba(102, 126, 234, 0.8);
+    `;
+    
+    notification.innerHTML = `
+        <img src="images/Attribute.png" style="
+            width: 35px;
+            height: 35px;
+            filter: drop-shadow(0 2px 8px rgba(102, 126, 234, 0.8));
+        " />
+        <span>속성부여권 +1 획득!</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // 애니메이션: 나타나기
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(-50%) translateY(0)';
+    }, 10);
+    
+    // 1.5초 후 사라지기
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(-50%) translateY(-30px)';
+        setTimeout(() => notification.remove(), 400);
+    }, 1500);
+}
 
 let enemies = []; // 테스트용 적들
 
@@ -138,7 +199,10 @@ function openElementPanel() {
             ${elementText}
         `;
         
-        weaponDiv.addEventListener('click', () => selectWeaponForElement(index));
+        weaponDiv.addEventListener('click', () => {
+            playClickSound();
+            selectWeaponForElement(index);
+        });
         weaponList.appendChild(weaponDiv);
     });
 }
@@ -177,29 +241,43 @@ function updateElementButtons(weapon) {
     elementButtons.forEach(btn => {
         const elementType = btn.dataset.element;
         
+        // 기존 이벤트 리스너 제거 (복제로)
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
         // 같은 속성은 비활성화
         if (currentElement === elementType) {
-            btn.disabled = true;
-            btn.style.opacity = '0.3';
-            btn.style.cursor = 'not-allowed';
+            newBtn.disabled = true;
+            newBtn.style.opacity = '0.3';
+            newBtn.style.cursor = 'not-allowed';
         } else if (currentElement && ELEMENT_DATA[currentElement]) {
             // 현재 속성이 있을 경우, 합성 불가능한 속성 비활성화
-            const canCombine = checkElementCombination(currentElement, elementType);
-            if (!canCombine) {
-                btn.disabled = true;
-                btn.style.opacity = '0.3';
-                btn.style.cursor = 'not-allowed';
+            const combinedElement = getCombinedElement(currentElement, elementType);
+            if (!combinedElement) {
+                newBtn.disabled = true;
+                newBtn.style.opacity = '0.3';
+                newBtn.style.cursor = 'not-allowed';
             } else {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                btn.style.cursor = 'pointer';
+                newBtn.disabled = false;
+                newBtn.style.opacity = '1';
+                newBtn.style.cursor = 'pointer';
+                
+                // hover 시 합성 결과 미리보기 (현재 속성이 있을 때만)
+                setupElementPreview(newBtn, currentElement, elementType, combinedElement);
             }
         } else {
-            // 속성이 없으면 모두 활성화
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
+            // 속성이 없으면 모두 활성화 (hover 효과 없음)
+            newBtn.disabled = false;
+            newBtn.style.opacity = '1';
+            newBtn.style.cursor = 'pointer';
+            // 1차 속성 부여 시에는 hover 효과 없음
         }
+        
+        // 클릭 이벤트 재등록
+        newBtn.addEventListener('click', () => {
+            playClickSound();
+            applyElementToSelectedWeapon(elementType);
+        });
     });
 }
 
@@ -217,13 +295,116 @@ function checkElementCombination(element1, element2) {
     return false;
 }
 
-// 속성 버튼 이벤트
-document.querySelectorAll('.element-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const elementType = btn.dataset.element;
-        applyElementToSelectedWeapon(elementType);
+// 합성된 속성 찾기
+function getCombinedElement(element1, element2) {
+    for (const [key, data] of Object.entries(ELEMENT_DATA)) {
+        if (data.base && data.base.length === 2) {
+            if ((data.base[0] === element1 && data.base[1] === element2) ||
+                (data.base[0] === element2 && data.base[1] === element1)) {
+                return key;
+            }
+        }
+    }
+    return null;
+}
+
+// 속성 미리보기 설정
+function setupElementPreview(btn, currentElement, hoverElement, combinedElement) {
+    const combinedData = ELEMENT_DATA[combinedElement];
+    
+    // 기존 툴팁 제거
+    const removeTooltip = () => {
+        const tooltip = document.getElementById('element-preview-tooltip');
+        if (tooltip) tooltip.remove();
+    };
+    
+    // 속성별 이미지 매핑
+    const elementImages = {
+        fire: 'images/fire.png',
+        ice: 'images/froz.png',
+        electric: 'images/elec.png',
+        poison: 'images/poiz.png',
+        radiation: 'images/radioactivity.png',
+        magnetic: 'images/magne.png',
+        corrosion: 'images/corr.png',
+        virus: 'images/virus.png',
+        explosion: 'images/explo.png',
+        gas: 'images/gas.png'
+    };
+    
+    // hover 시 툴팁 표시
+    btn.addEventListener('mouseenter', (e) => {
+        // 비활성화된 버튼에는 hover 미적용
+        if (btn.disabled) return;
+        
+        removeTooltip(); // 기존 툴팁 제거
+        
+        // 툴팁 생성
+        const tooltip = document.createElement('div');
+        tooltip.id = 'element-preview-tooltip';
+        tooltip.style.cssText = `
+            position: fixed;
+            left: ${e.clientX + 15}px;
+            top: ${e.clientY - 40}px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(30,30,30,0.95) 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 3px solid ${combinedData.color};
+            z-index: 100000;
+            pointer-events: none;
+            font-family: 'OneStoreMobilePop', sans-serif;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        `;
+        
+        // 속성별 이미지 사용
+        const iconSize = 45;
+        const imageUrl = elementImages[combinedElement] || 'images/Attribute.png';
+        tooltip.innerHTML = `
+            <div style="
+                width: ${iconSize}px;
+                height: ${iconSize}px;
+                background-image: url('${imageUrl}');
+                background-size: cover;
+                background-position: center;
+                border-radius: 10px;
+                filter: drop-shadow(0 2px 8px ${combinedData.color});
+            "></div>
+            <div>
+                <div style="
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-bottom: 4px;
+                    color: ${combinedData.color};
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+                ">
+                    합성 결과: ${combinedData.name}
+                </div>
+                <div style="font-size: 13px; opacity: 0.9;">
+                    ${ELEMENT_DATA[currentElement].name} + ${ELEMENT_DATA[hoverElement].name}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(tooltip);
     });
-});
+    
+    btn.addEventListener('mouseleave', removeTooltip);
+    
+    btn.addEventListener('mousemove', (e) => {
+        const tooltip = document.getElementById('element-preview-tooltip');
+        if (tooltip) {
+            tooltip.style.left = `${e.clientX + 15}px`;
+            tooltip.style.top = `${e.clientY - 40}px`;
+        }
+    });
+}
+
+// 속성 버튼 초기 이벤트는 updateElementButtons에서 처리됨
+// (중복 이벤트 방지를 위해 여기서는 등록하지 않음)
 
 // 속성 적용
 function applyElementToSelectedWeapon(elementType) {
@@ -331,6 +512,7 @@ function updateTicketUI() {
 
 // 레벨업 카드 표시
 function showLevelUpCards() {
+    playLevelUpSound(); // 레벨업 사운드 재생
     gameState.paused = true;
     const panel = document.getElementById('levelUpPanel');
     const container = document.getElementById('cardContainer');
@@ -426,6 +608,8 @@ function showLevelUpCards() {
 
 // 레벨업 카드 선택
 function selectLevelUpCard(type, data) {
+    playClickSound();
+    
     if (type === 'weapon') {
         // 새 무기 추가
         addWeaponToPlayer(player, data);
@@ -880,6 +1064,7 @@ function update(dt) {
         attributeTicketTimer = 0;
         player.elementTickets = (player.elementTickets || 0) + 1;
         updateTicketUI();
+        showTicketNotification();
     }
     
     // 체력 감소 시스템 (시간 경과에 따라 증가)
@@ -1234,8 +1419,10 @@ function update(dt) {
                                 enemy.elementEffects.gas.timer = 2.0; // 안개 안에 있으면 계속 갱신
                             }
                             
-                            // fromFog = true 전달 (안개에서 온 피해이므로 새 안개 생성 안 함)
-                            applyDamageToEnemy(enemy, fire.damage, player, fire.element, fireZones, enemies, true);
+                            // 안개 생성기의 가스 속성은 이미 가스 안개를 생성하므로 fromFog=true
+                            // 하지만 가스 속성일 때는 추가 가스 생성 가능하도록 fromFog=false 전달
+                            const isGasFog = fire.element === 'gas';
+                            applyDamageToEnemy(enemy, fire.damage, player, fire.element, fireZones, enemies, !isGasFog);
                             enemy.hitFlash = Math.max(enemy.hitFlash || 0, 0.3);
                             if (enemy.hp <= 0 && (enemy.armor || 0) <= 0) {
                                 enemy.isDead = true;

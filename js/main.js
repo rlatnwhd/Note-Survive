@@ -6,6 +6,75 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// 사운드 매니저 초기화
+try {
+    if (window.soundManager) {
+        soundManager.initBGM();
+        soundManager.initSounds();
+    } else {
+        console.error('soundManager가 로드되지 않았습니다.');
+    }
+} catch (error) {
+    console.error('사운드 초기화 오류:', error);
+}
+
+// 설정 패널 관리
+function openSettings() {
+    playClickSound();
+    document.getElementById('settingsPanel').classList.add('show');
+    document.getElementById('overlay').classList.add('show');
+    
+    // 현재 볼륨 값으로 슬라이더 초기화
+    const bgmSlider = document.getElementById('bgmVolume');
+    const sfxSlider = document.getElementById('sfxVolume');
+    
+    bgmSlider.value = soundManager.getBGMVolume() * 100;
+    sfxSlider.value = soundManager.getSFXVolume() * 100;
+    
+    updateVolumeDisplay();
+}
+
+function closeSettings() {
+    playClickSound();
+    document.getElementById('settingsPanel').classList.remove('show');
+    document.getElementById('overlay').classList.remove('show');
+}
+
+function updateVolumeDisplay() {
+    const bgmValue = document.getElementById('bgmVolume').value;
+    const sfxValue = document.getElementById('sfxVolume').value;
+    
+    document.getElementById('bgmVolumeValue').textContent = bgmValue + '%';
+    document.getElementById('sfxVolumeValue').textContent = sfxValue + '%';
+}
+
+// 볼륨 슬라이더 이벤트
+document.addEventListener('DOMContentLoaded', () => {
+    const bgmSlider = document.getElementById('bgmVolume');
+    const sfxSlider = document.getElementById('sfxVolume');
+    
+    bgmSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        soundManager.setBGMVolume(volume);
+        updateVolumeDisplay();
+    });
+    
+    sfxSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        soundManager.setSFXVolume(volume);
+        updateVolumeDisplay();
+    });
+    
+    // 초기 표시
+    updateVolumeDisplay();
+});
+
+// 오버레이 클릭 시 팝업 닫기
+document.getElementById('overlay').addEventListener('click', () => {
+    closeSettings();
+    closeDescriptionPopup();
+});
+
 // 카메라
 let camera = {
     x: 0,
@@ -23,6 +92,7 @@ let player = null;
 let keys = {};
 window.addEventListener('keydown', (e) => {
     keys[e.key.toLowerCase()] = true;
+    soundManager.startBGM(); // 키 입력 시 BGM 시작
 });
 window.addEventListener('keyup', (e) => {
     keys[e.key.toLowerCase()] = false;
@@ -31,6 +101,35 @@ window.addEventListener('keyup', (e) => {
 window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+});
+
+// 마우스 클릭 처리
+canvas.addEventListener('click', (e) => {
+    if (!player) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // 마우스 위치를 월드 좌표로 변환
+    const worldX = mouseX - canvas.width / 2 + camera.x;
+    const worldY = mouseY - canvas.height / 2 + camera.y;
+    
+    // 각 버튼과의 충돌 체크
+    buttons.forEach(button => {
+        const dx = worldX - button.x;
+        const dy = worldY - button.y;
+        const halfWidth = button.width / 2;
+        const halfHeight = button.height / 2;
+        
+        if (Math.abs(dx) < halfWidth && Math.abs(dy) < halfHeight) {
+            playClickSound();
+            button.action();
+        }
+    });
+    
+    // 첫 클릭 시 BGM 시작
+    soundManager.startBGM();
 });
 
 // 버튼 정의 (월드 좌표 - 맵 고정)
@@ -53,6 +152,16 @@ const buttons = [
         height: 100,
         action: () => {
             showDescriptionPopup();
+        }
+    },
+    {
+        text: 'Settings',
+        x: 0,  // 중앙
+        y: 350,  // 플레이어 아래
+        width: 350,
+        height: 80,
+        action: () => {
+            openSettings();
         }
     }
 ];
@@ -89,6 +198,11 @@ function init() {
     player.x = 0;
     player.y = 0;
     
+    // BGM 시작 시도 (사용자 인터렉션 필요)
+    setTimeout(() => {
+        soundManager.startBGM();
+    }, 100);
+    
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
 }
@@ -122,6 +236,7 @@ function update(dt) {
             
             if (isColliding && keys[' ']) {
                 keys[' '] = false; // 중복 실행 방지
+                playClickSound(); // 클릭 사운드 재생
                 button.action();
             }
         });
@@ -344,6 +459,7 @@ init();
 
 // 설명 팝업 열기
 function showDescriptionPopup() {
+    playClickSound(); // 팝업 열 때도 클릭음
     document.getElementById('descriptionPopup').classList.add('show');
     document.getElementById('overlay').classList.add('show');
 }

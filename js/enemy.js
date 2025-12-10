@@ -673,6 +673,11 @@ function updateEnemy(enemy, player, dt) {
                 
                 player.hp -= totalDamage;
                 
+                // Hit 사운드 재생
+                if (typeof playHitSound === 'function') {
+                    playHitSound();
+                }
+                
                 // 체력 0 이하로 떨어지지 않도록 제한
                 if (player.hp <= 0) {
                     player.hp = 0;
