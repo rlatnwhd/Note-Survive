@@ -113,24 +113,24 @@
 <tr>
 <td width="50%">
 
-<img src="images/fire.png" width="40" alt="불">
 **불 (Fire)**
+<img src="images/fire.png" width="40" alt="불">
 - 초당 최대 체력의 **5%** 피해 (DoT)
 
-<img src="images/froz.png" width="40" alt="얼음">
 **얼음 (Ice)**
+<img src="images/froz.png" width="40" alt="얼음">
 - **4초** 동안 둔화
 
 </td>
 <td width="50%">
 
-<img src="images/poiz.png" width="40" alt="독">
 **독 (Poison)**
+<img src="images/poiz.png" width="40" alt="독">
 - 초당 **50** 고정 피해
 - 방어구 무시, 방어력 적용
 
-<img src="images/elec.png" width="40" alt="전기">
 **전기 (Electric)**
+<img src="images/elec.png" width="40" alt="전기">
 - **0.3초** 쇼크 (기절)
 
 </td>
@@ -145,35 +145,35 @@
 <tr>
 <td width="50%">
 
-<img src="images/radioactivity.png" width="40" alt="방사능">
 **방사능 (불 + 전기)**
+<img src="images/radioactivity.png" width="40" alt="방사능">
 - 받는 피해량 **1.5~3배** 증가
 - 피격마다 스택 증가
 
-<img src="images/magne.png" width="40" alt="자성">
 **자성 (얼음 + 전기)**
+<img src="images/magne.png" width="40" alt="자성">
 - **20% 확률**로 보호막 파괴
 
-<img src="images/corr.png" width="40" alt="부식">
 **부식 (독 + 전기)**
+<img src="images/corr.png" width="40" alt="부식">
 - 방어력 **20~80%** 감소
 - 피격마다 스택 증가 (최대 4스택)
 
 </td>
 <td width="50%">
 
-<img src="images/gas.png" width="40" alt="가스">
 **가스 (불 + 독)**
+<img src="images/gas.png" width="40" alt="가스">
 - **50% 확률**로 5초 지속 가스 생성
 - 범위형 DoT (방어구 무시)
 
-<img src="images/virus.png" width="40" alt="바이러스">
 **바이러스 (얼음 + 독)**
+<img src="images/virus.png" width="40" alt="바이러스">
 - 최대 체력의 **20%** 고정 피해
 - 방어구, 방어력 완전 무시
 
-<img src="images/explo.png" width="40" alt="폭발">
 **폭발 (불 + 얼음)**
+<img src="images/explo.png" width="40" alt="폭발">
 - 적 처치 시 **범위 피해**
 - 연쇄 폭발 없음
 
@@ -436,5 +436,6 @@
 ---
 
 **🎮 봐주셔서 감사합니다! 🎮**
+
 
 
